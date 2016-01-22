@@ -1,88 +1,110 @@
-<style lang="sass">
+<style scoped>
 .datetime-picker {
     position: relative;
+    display: inline-block;
     font-family: "Segoe UI","Lucida Grande",Helvetica,Arial,"Microsoft YaHei";
     -webkit-font-smoothing: antialiased;
     color: #333;
+}
 
-    * {
-        box-sizing: border-box;
-    }
-    input {
-        width: 100%;
-        padding: 6px 10px;
-        outline: 0 none;
-        border: 1px solid #ccc;
-    }
-    .picker-wrap {
-        position: absolute;
-        width: 238px;
-        height: 280px;
-        margin-top: 2px;
-        background-color: #fff;
-        box-shadow: 0 0 6px #ccc;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        border-spacing: 0;
-        text-align: center;
-        font-size: 13px;
-    }
-    tr {
-        height: 34px;
-    }
-    th, td {
-        user-select: none;
-        width: 34px;
-        height: 34px;
-        padding: 0;
-        line-height: 34px;
-    }
-    td {
-        cursor: pointer;
-        &:hover {
-            background-color: #f0f0f0;
-        }
-        &.pass,
-        &.future {
-            color: #aaa;
-        }
-        &.today {
-            background-color: #ececec;
-            color: #3bb4f2;
-        }
-    }
-    .date-head {
-        background-color: #3bb4f2;
-        text-align: center;
-        color: #fff;
-        font-size: 14px;
-    }
-    .date-days {
-        color: #3bb4f2;
-        font-size: 14px;
-    }
-    .show-year {
-        display: inline-block;
-        min-width: 62px;
-        vertical-align: middle;
-    }
-    .show-month {
-        display: inline-block;
-        min-width: 28px;
-        vertical-align: middle;
-    }
-    .btn-prev,
-    .btn-next {
-        cursor: pointer;
-        display: inline-block;
-        padding: 0 10px;
-        vertical-align: middle;
-        &:hover {
-            background: rgba(16, 160, 234, 0.5);
-        }
-    }
+.datetime-picker * {
+    box-sizing: border-box;
+}
+
+.datetime-picker input {
+    width: 100%;
+    padding: 5px 10px;
+    height: 30px;
+    outline: 0 none;
+    border: 1px solid #ccc;
+    font-size: 13px;
+}
+
+.datetime-picker .picker-wrap {
+    position: absolute;
+    z-index: 1000;
+    width: 238px;
+    height: 280px;
+    margin-top: 2px;
+    background-color: #fff;
+    box-shadow: 0 0 6px #ccc;
+}
+
+.datetime-picker table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    text-align: center;
+    font-size: 13px;
+}
+
+.datetime-picker tr {
+    height: 34px;
+    border: 0 none;
+}
+
+.datetime-picker th, .datetime-picker td {
+    user-select: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0 none;
+    line-height: 34px;
+    text-align: center;
+}
+
+.datetime-picker td {
+    cursor: pointer;
+}
+
+.datetime-picker td:hover {
+    background-color: #f0f0f0;
+}
+
+.datetime-picker td.date-pass, .datetime-picker td.date-future {
+    color: #aaa;
+}
+
+.datetime-picker td.date-active {
+    background-color: #ececec;
+    color: #3bb4f2;
+}
+
+.datetime-picker .date-head {
+    background-color: #3bb4f2;
+    text-align: center;
+    color: #fff;
+    font-size: 14px;
+}
+
+.datetime-picker .date-days {
+    color: #3bb4f2;
+    font-size: 14px;
+}
+
+.datetime-picker .show-year {
+    display: inline-block;
+    min-width: 62px;
+    vertical-align: middle;
+}
+
+.datetime-picker .show-month {
+    display: inline-block;
+    min-width: 28px;
+    vertical-align: middle;
+}
+
+.datetime-picker .btn-prev,
+.datetime-picker .btn-next {
+    cursor: pointer;
+    display: inline-block;
+    padding: 0 10px;
+    vertical-align: middle;
+}
+
+.datetime-picker .btn-prev:hover,
+.datetime-picker .btn-next:hover {
+    background: rgba(16, 160, 234, 0.5);
 }
 </style>
 
@@ -116,8 +138,9 @@
                 <tbody>
                     <tr v-for="i in 6">
                         <td v-for="j in 7"
-                            :class="{ pass: [0, 1].includes(i) && date[i * 7 + j] > 14, future: [4, 5].includes(i) && date[i * 7 + j] < 14, today: date[i * 7 + j] === now.getDate() }"
-                            @click="pickDate">{{date[i * 7 + j]}}</td>
+                            :class="date[i * 7 + j] && date[i * 7 + j].status"
+                            :date="date[i * 7 + j] && date[i * 7 + j].date"
+                            @click="pickDate(i * 7 + j)">{{date[i * 7 + j] && date[i * 7 + j].text}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -128,9 +151,10 @@
 <script>
     export default {
         props: {
-            width: {type: String, default: '238px' },
+            width: { type: String, default: '238px' },
             readonly: { type: Boolean, default: false },
-            value: { type: String, default: '2016-01-17' }
+            value: { type: String, default: '' },
+            format: { type: String, default: 'YYYY-MM-DD' }
         },
         data () {
             return {
@@ -144,30 +168,53 @@
         watch: {
             now () {
                 this.update();
+            },
+            show () {
+                this.update();
             }
         },
         methods: {
+            close () {
+                this.show = false;
+            },
             update () {
                 var arr = [];
-                var setting = new Date(this.now);
-                var month = setting.getMonth();
-                setting.setMonth(setting.getMonth(), 1);        // the first day
-                var curFirstDay = setting.getDay();
+                var time = new Date(this.now);
+                time.setMonth(time.getMonth(), 1);           // the first day
+                var curFirstDay = time.getDay();
                 curFirstDay === 0 && (curFirstDay = 7);
-                setting.setDate(0);                             // the last day
-                var lastDayCount = setting.getDate();
-                setting.setMonth(month + 1, 0);                 // the last day of this month
-                var curDayCount = setting.getDate();
-                setting.setDate(1);                             // fix bug when month change
+                time.setDate(0);                             // the last day
+                var lastDayCount = time.getDate();
                 for (let i = curFirstDay; i > 0; i--) {
-                    arr.push(lastDayCount - i + 1);
+                    arr.push({
+                        text: lastDayCount - i + 1,
+                        time: new Date(time.getFullYear(), time.getMonth(), lastDayCount - i + 1),
+                        status: 'date-pass'
+                    });
                 }
+
+                time.setMonth(time.getMonth() + 2, 0);       // the last day of this month
+                var curDayCount = time.getDate();
+                time.setDate(1);                             // fix bug when month change
+                var value = this.value || this.stringify(new Date());
                 for (let i = 0; i < curDayCount; i++) {
-                    arr.push(i + 1);
+                    let tmpTime = new Date(time.getFullYear(), time.getMonth(), i + 1);
+                    let status = '';
+                    this.stringify(tmpTime) === value && (status = 'date-active');
+                    arr.push({
+                        text: i + 1,
+                        time: tmpTime,
+                        status: status
+                    });
                 }
+
                 var j = 1;
                 while (arr.length < 42) {
-                    arr.push(j);
+                    arr.push({
+                        text: j,
+                        time: new Date(time.getFullYear(), time.getMonth() + 1, j),
+                        status: 'date-future'
+                    });
                     j++;
                 }
                 this.date = arr;
@@ -180,16 +227,44 @@
                 this.now.setMonth(this.now.getMonth() + flag);
                 this.now = new Date(this.now);
             },
-            pickDate (e) {
+            pickDate (index) {
                 this.show = false;
-                var year = this.now.getFullYear();
-                var month = ('0' + (this.now.getMonth() + 1)).slice(-2);
-                var date = ('0' + e.target.textContent).slice(-2);
-                this.value = year + '-' + month + '-' + date;
+                this.now = new Date(this.date[index].time);
+                this.value = this.stringify();
+            },
+            parse (str) {
+                var time = new Date(str);
+                return isNaN(time.getTime()) ? null : time;
+            },
+            stringify (time = this.now, format = this.format) {
+                var year = time.getFullYear();
+                var month = time.getMonth() + 1;
+                var date = time.getDate();
+                var monthName = this.months[time.getMonth()];
+
+                var map = {
+                    YYYY: year,
+                    MMM: monthName,
+                    MM: ('0' + month).slice(-2),
+                    M: month,
+                    DD: ('0' + date).slice(-2),
+                    D: date
+                };
+                return format.replace(/Y+|M+|D+/g, function (str) {
+                    return map[str];
+                });
             }
         },
         ready () {
-            this.update();
+            this.now = this.parse(this.value) || new Date();
+            document.addEventListener('click', (e) => {
+                if (!this.$el.contains(e.target)) {
+                    this.close();
+                }
+            }, false);
+        },
+        beforeDestroy () {
+            document.removeEventListener('click', this.close, false);
         }
     };
 </script>

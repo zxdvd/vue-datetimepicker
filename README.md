@@ -1,6 +1,6 @@
 # vue-datetimepicker
 
-> vue datetime picker
+> datetimepicker component for Vue.js
 
 ## Build Setup
 
