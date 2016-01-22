@@ -1,9 +1,9 @@
 {
   "name": "vue-datetimepicker",
-  "version": "1.0.1",
+  "version": "0.0.3",
   "description": "datetimepicker component for Vue.js",
   "author": "Bubblings",
-  "main": "src/datepicker.vue",
+  "main": "src/datetime.vue",
   "scripts": {
     "dev": "webpack-dev-server --inline --hot --config build/webpack.dev.conf.js",
     "build": "rimraf dist && webpack --progress --hide-modules --config build/webpack.prod.conf.js"
